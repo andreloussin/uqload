@@ -1,0 +1,78 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+import sys
+import argparse
+import concurrent.futures
+from uqload_dl import UQLoad
+
+def convert_uqload_url(url):
+    """
+    Convert Uqload URL from uqload.to format to uqload.io format.
+    """
+    return url.replace("uqload.to", "uqload.io").replace("/embed-", "/").replace("uqload.ws", "uqload.io")
+
+def progress_callback(downloaded_size, total_size):
+    """
+    Callback function to display download progress.
+    """
+    progress = downloaded_size / total_size * 100
+    sys.stdout.write(f"\rDownloading... {progress:.2f}% completed")
+    sys.stdout.flush()
+
+def download_uqload_video(url):
+    """
+    Function to download a single Uqload video.
+    """
+    try:
+        # Convert Uqload URL format
+        uqload_url = convert_uqload_url(url)
+        
+        print(f"\nDownloading video from {url}...")
+        uqload = UQLoad(url=uqload_url, on_progress_callback=progress_callback)
+        uqload.download()
+        print(f"\nVideo from {url} downloaded successfully.")
+    except Exception as e:
+        print(f"Error downloading video from {url}: {e}")
+
+def download_uqload_videos(video_urls, max_concurrent_downloads=4):
+    """
+    Function to download multiple Uqload videos in parallel using ThreadPoolExecutor.
+    
+    Parameters:
+    - video_urls: List of URLs to download.
+    - max_concurrent_downloads: Maximum number of downloads to execute concurrently.
+    """
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrent_downloads) as executor:
+        futures = [executor.submit(download_uqload_video, url) for url in video_urls]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()  # This will re-raise any exception caught during thread execution
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+def parse_arguments():
+    """
+    Parse command-line arguments.
+    
+    Returns:
+    - A dictionary with options as keys and their corresponding values.
+    - A list of video URLs.
+    """
+    parser = argparse.ArgumentParser(description="Download Uqload videos concurrently.")
+    
+    parser.add_argument('video_urls', nargs='+', help="List of Uqload video URLs.")
+    parser.add_argument('-c', '--concurrent', type=int, default=4, help="Number of concurrent downloads (default: 4).")
+    
+    args = parser.parse_args()
+    
+    return args.concurrent, args.video_urls
+
+if __name__ == "__main__":
+    max_concurrent_downloads, video_urls = parse_arguments()
+
+    if not video_urls:
+        print("Please provide Uqload video URLs as command line arguments.")
+        sys.exit(1)
+    
+    download_uqload_videos(video_urls, max_concurrent_downloads)
