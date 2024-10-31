@@ -10,8 +10,7 @@ def convert_uqload_url(url):
     """
     Convert Uqload URL from uqload.to format to uqload.io format.
     """
-    return url.replace("uqload.to", "uqload.io").replace("/embed-", "/").replace("uqload.ws", "uqload.io")
-
+    return url.replace("uqload.to", "uqload.com").replace("/embed-", "/").replace("uqload.ws", "uqload.com").replace("uqload.net", "uqload.com")
 def progress_callback(downloaded_size, total_size):
     """
     Callback function to display download progress.
